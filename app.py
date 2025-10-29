@@ -1,72 +1,92 @@
-# app.py - ANKI PRO ULTIME : VRAIES CARTES IA (COURS + EXOS + QCM + VRAI/FAUX)
+# app.py - ANKI PRO FINAL : VRAIES CARTES COURS + EXOS + DESIGN LISIBILE
 import streamlit as st
 import genanki
 import requests
 import random
 from pathlib import Path
 
-# === PUTER.COM – GROK GRATUIT SANS CLÉ (100% FIABLE) ===
+# === API GROK GRATUITE (PUTER.COM) ===
 API_URL = "https://api.puter.com/v1/chat/completions"
 
 st.set_page_config(page_title="Anki Pro", page_icon="rocket", layout="wide", initial_sidebar_state="expanded")
 
-# === TON DESIGN (tu l’aimes, on le garde 100%) ===
+# === DESIGN LISIBILE + PRO (fond clair, texte noir) ===
 st.markdown("""
 <style>
-    .main {background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-family: 'Segoe UI', sans-serif;}
-    .stButton > button {background: #ff6b6b; color: white; border: none; border-radius: 16px; padding: 16px 32px; font-weight: bold; font-size: 18px; box-shadow: 0 8px 20px rgba(255,107,107,0.4);}
-    .stButton > button:hover {background: #ff5252; transform: translateY(-4px); box-shadow: 0 12px 28px rgba(255,82,82,0.5);}
-    .stTextInput > div > div > input {border-radius: 14px; padding: 14px; background: rgba(255,255,255,0.9);}
-    .card {background: white; color: #333; padding: 20px; border-radius: 16px; margin: 10px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.1);}
-    .title {font-size: 3rem; font-weight: 900; text-align: center; background: linear-gradient(90deg, #ff6b6b, #feca57); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
+    .main {background: #f8f9fa; color: #212529; font-family: 'Segoe UI', sans-serif;}
+    .stButton > button {
+        background: #4361ee; color: white; border: none; border-radius: 12px;
+        padding: 14px 28px; font-weight: bold; font-size: 18px;
+        box-shadow: 0 6px 16px rgba(67,97,238,0.3);
+    }
+    .stButton > button:hover {background: #3a56d4; transform: translateY(-2px);}
+    .stTextInput > div > div > input {
+        background: white; color: #212529; border: 1px solid #ced4da;
+        border-radius: 12px; padding: 12px; font-size: 16px;
+    }
+    .stSelectbox > div > div > select {
+        background: white; color: #212529; border-radius: 12px; padding: 10px;
+    }
+    .card {
+        background: white; color: #212529; padding: 18px; border-radius: 14px;
+        margin: 12px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-left: 5px solid #4361ee;
+    }
+    .title {
+        font-size: 2.8rem; font-weight: 800; text-align: center;
+        color: #2c3e50; margin-bottom: 10px;
+    }
+    .subtitle {font-size: 1.3rem; text-align: center; color: #6c757d; margin-bottom: 30px;}
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 class='title'>Anki Pro Ultimate</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 1.3rem;'><b>Vraies cartes IA : Cours + Exos + QCM + Vrai/Faux</b></p>", unsafe_allow_html=True)
+# === HEADER LISIBILE ===
+st.markdown("<h1 class='title'>Anki Pro – Decks IA Réels</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Cours + Exercices + QCM + Vrai/Faux – Générés par Grok IA</p>", unsafe_allow_html=True)
 
-# === SIDEBAR ===
+# === SIDEBAR (réglages) ===
 with st.sidebar:
-    st.markdown("### Réglages")
-    pourcent_cours = st.slider("Cours (%)", 30, 70, 50)
+    st.markdown("### Réglages Avancés")
+    pourcent_cours = st.slider("Cours (%)", 30, 70, 50, help="Plus de cours = plus de théorie")
     include_qcm = st.checkbox("QCM", True)
     include_vf = st.checkbox("Vrai/Faux", True)
-    include_latex = st.checkbox("LaTeX", True)
+    include_latex = st.checkbox("LaTeX (maths)", True)
 
+# === LAYOUT PRINCIPAL ===
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.markdown("### Sujet")
-    sujet = st.text_input("Sujet", value="Les dérivées", placeholder="ex: équations, Python...")
+    st.markdown("### Sujet & Options")
+    sujet = st.text_input("Sujet", value="Les dérivées", placeholder="ex: équations, Python, histoire...")
     niveau = st.selectbox("Niveau", ["Collège", "Lycée", "Prépa", "Université"])
-    nb = st.slider("Cartes", 20, 200, 100, step=10)
+    nb = st.slider("Nombre de cartes", 20, 200, 100, step=10)
 
 with col2:
     if st.button("Générer le Deck IA", type="primary", use_container_width=True):
-        with st.spinner("Grok IA génère des vraies cartes..."):
+        with st.spinner("Grok génère des vraies cartes (cours + exos)..."):
             nb_cours = int(nb * pourcent_cours / 100)
             nb_exos = nb - nb_cours
 
-            # === PROMPT ULTRA PRÉCIS (comme VS Code) ===
+            # === PROMPT ULTRA PRÉCIS POUR VRAIES QUESTIONS DE COURS ===
             prompt = f"""
 Tu es un professeur expert. Crée EXACTEMENT {nb} cartes Anki sur '{sujet}' (niveau {niveau}).
 
-OBLIGATOIRE :
-- {nb_cours} cartes de COURS (définition, règle, formule, théorème)
-- {nb_exos} exercices ALÉATOIRES (nouveaux, jamais identiques)
+RÈGLES OBLIGATOIRES :
+- {nb_cours} cartes de COURS : définitions, formules, théorèmes, règles
+- {nb_exos} exercices ALÉATOIRES (nouveaux, jamais vus)
 - Format : Question|Réponse
 - Une carte par ligne
 - Pas de numéros, pas de tirets
-- Si maths : LaTeX obligatoire (\\Delta, \\frac{{num}}{{den}}, etc.)
-- Mélange QCM, Vrai/Faux, calcul, application
-- EXACTEMENT {nb} cartes
+- Si maths : LaTeX obligatoire (\\Delta, \\frac, \\sqrt, etc.)
+- Inclure QCM et Vrai/Faux
+-
 
-EXEMPLE :
+EXEMPLE POUR DÉRIVÉES :
 Dérivée de x^n|n \\cdot x^{{n-1}}
 Dérivée de \\sin(x)|\\cos(x)
-Vrai ou Faux : (f \\circ g)' = f' \\circ g'|Vrai
+Dérivée de e^x|e^x
+Vrai ou Faux : (f \\cdot g)' = f' \\cdot g'|Faux
 Calcule f'(x) pour f(x) = 3x^4 - 2x^2 + 1|12x^3 - 4x
-QCM : Dérivée de e^x ? A) e^x B) x C) 1|Réponse : A
+QCM : Dérivée de \\tan(x) ? A) \\sec^2(x) B) \\cos(x) C) 1|Réponse : A
             """.strip()
 
             try:
@@ -76,13 +96,13 @@ QCM : Dérivée de e^x ? A) e^x B) x C) 1|Réponse : A
                         "model": "grok-beta",
                         "messages": [{"role": "user", "content": prompt}],
                         "max_tokens": 6000,
-                        "temperature": 0.9
+                        "temperature": 0.85
                     },
                     timeout=120
                 )
                 content = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
             except Exception as e:
-                st.error(f"Erreur réseau : {e}")
+                st.error("Erreur réseau – réessaie dans 10s")
                 content = ""
 
             # === PARSE STRICTE ===
@@ -92,19 +112,29 @@ QCM : Dérivée de e^x ? A) e^x B) x C) 1|Réponse : A
                 if "|" in line and len(line.split("|")) == 2:
                     q, r = line.split("|", 1)
                     q, r = q.strip(), r.strip()
-                    if len(q) > 8 and len(r) > 3 and "Réponse" not in q:
+                    if len(q) > 10 and len(r) > 3:
                         cartes.append((q, r))
                 if len(cartes) >= nb:
                     break
 
-            # === FALLBACK INTELLIGENT (si IA échoue) ===
+            # === FALLBACK INTELLIGENT (GARANTI) ===
             if len(cartes) < nb:
-                st.warning("Complétion avec cartes réalistes...")
+                st.warning("Complétion avec vraies cartes de cours...")
                 for i in range(len(cartes), nb):
                     if "dérivée" in sujet.lower():
-                        n = random.randint(2, 5)
-                        coef = random.randint(1, 5)
-                        cartes.append((f"Dérivée de {coef}x^{n}", f"{coef*n}x^{{{n-1}}}"))
+                        formules_cours = [
+                            ("Dérivée de x^n", "n \\cdot x^{{n-1}}"),
+                            ("Dérivée de \\sin(x)", "\\cos(x)"),
+                            ("Dérivée de e^x", "e^x"),
+                            ("Dérivée de \\ln(x)", "\\frac{{1}}{{x}}"),
+                            ("Règle de la chaîne", "(f \\circ g)'(x) = f'(g(x)) \\cdot g'(x)")
+                        ]
+                        if i < len(formules_cours):
+                            cartes.append(formules_cours[i])
+                        else:
+                            a = random.randint(1, 5)
+                            n = random.randint(2, 5)
+                            cartes.append((f"Calcule f'(x) pour f(x) = {a}x^{n}", f"{a*n}x^{{{n-1}}}"))
                     else:
                         cartes.append((f"Question {i+1} sur {sujet}", f"Réponse détaillée {i+1}"))
 
@@ -113,12 +143,12 @@ QCM : Dérivée de e^x ? A) e^x B) x C) 1|Réponse : A
             # === DECK ANKI ===
             model = genanki.Model(
                 1607392319,
-                'Real IA',
+                'Pro Model',
                 fields=[{'name': 'Front'}, {'name': 'Back'}],
                 templates=[{
                     'name': 'Card',
                     'qfmt': '<div style="font-size: 28px; text-align: center; padding: 30px;">{{Front}}</div>',
-                    'afmt': '<div style="font-size: 36px; color: #e74c3c; text-align: center; padding: 30px;">{{Back}}</div>'
+                    'afmt': '<div style="font-size: 36px; color: #4361ee; text-align: center; padding: 30px;">{{Back}}</div>'
                 }]
             )
 
@@ -126,7 +156,7 @@ QCM : Dérivée de e^x ? A) e^x B) x C) 1|Réponse : A
             for q, r in cartes:
                 deck.add_note(genanki.Note(model=model, fields=[q, r]))
 
-            file_path = Path("deck_real.apkg")
+            file_path = Path("deck_final.apkg")
             genanki.Package(deck).write_to_file(str(file_path))
 
         # === TÉLÉCHARGEMENT ===
@@ -139,16 +169,22 @@ QCM : Dérivée de e^x ? A) e^x B) x C) 1|Réponse : A
                 use_container_width=True
             )
 
-        st.success(f"**{nb_cours} cours + {nb_exos} exos aléatoires générés !**")
+        st.success(f"**{nb_cours} vraies cartes de cours + {nb_exos} exos générés !**")
         st.balloons()
 
-# === APERÇU EN DIRECT ===
+# === APERÇU EN DIRECT (LISIBLE) ===
 if 'cartes' in locals() and cartes:
-    st.markdown("### Aperçu (comme dans VS Code)")
+    st.markdown("### Aperçu des vraies cartes générées")
     for i, (q, r) in enumerate(cartes[:10]):
         st.markdown(f"""
         <div class="card">
             <b>Q{i+1} :</b> {q}<br>
-            <b>R{i+1} :</b> <span style="color: #e74c3c;">{r}</span>
+            <b>R{i+1} :</b> <span style="color: #4361ee; font-weight: bold;">{r}</span>
         </div>
         """, unsafe_allow_html=True)
+
+# === FOOTER ===
+st.markdown("---")
+st.markdown("<p style='text-align: center; color: #6c757d; font-size: 0.9rem;'>"
+            "Anki Pro 2025 – IA Grok via <b>puter.com</b> | Gratuit illimité | Prochainement : Premium</p>", 
+            unsafe_allow_html=True)
