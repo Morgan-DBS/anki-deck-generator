@@ -1,4 +1,4 @@
-# app.py - ANKI PRO GRATUIT AVEC OPENROUTER (GROK IA)
+# app.py - ANKI PRO GRATUIT AVEC OPENROUTER (FIX 401 USER NOT FOUND)
 import streamlit as st
 import genanki
 import requests
@@ -6,7 +6,6 @@ import random
 from pathlib import Path
 
 # === TA CLÉ OPENROUTER (GRATUITE) ===
-# → Remplace si besoin sur https://openrouter.ai/keys
 OPENROUTER_KEY = "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"
 
 # === CONFIG PAGE ===
@@ -17,121 +16,59 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# === CSS PRO MODERNE (2025) ===
+# === CSS PRO MODERNE ===
 st.markdown("""
 <style>
-    .main {
-        background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .stButton > button {
-        background: linear-gradient(45deg, #007bff, #0056b3);
-        color: white;
-        border: none;
-        border-radius: 12px;
-        padding: 14px 28px;
-        font-weight: bold;
-        font-size: 16px;
-        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-        transition: all 0.3s ease;
-    }
-    .stButton > button:hover {
-        background: #0056b3;
-        transform: translateY(-3px);
-        box-shadow: 0 6px 16px rgba(0,123,255,0.4);
-    }
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea {
-        border-radius: 10px;
-        border: 1px solid #ced4da;
-        padding: 10px;
-    }
-    .metric-card {
-        background: white;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        text-align: center;
-        margin: 10px 0;
-    }
-    .header-title {
-        font-size: 3rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, #007bff, #0056b3);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-bottom: 10px;
-    }
+    .main {background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif;}
+    .stButton > button {background: linear-gradient(45deg, #007bff, #0056b3); color: white; border: none; border-radius: 12px; padding: 12px 24px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
+    .stButton > button:hover {background: #0056b3; transform: translateY(-2px);}
+    .stTextInput > div > div > input, .stTextArea > div > div > textarea {border-radius: 10px; border: 1px solid #ced4da;}
 </style>
 """, unsafe_allow_html=True)
 
-# === HEADER PRO ===
-st.markdown("<h1 class='header-title'>Anki Pro Generator</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #6c757d; font-size: 1.2rem;'>"
-            "<b>Grok IA</b> via OpenRouter – Decks intelligents générés en 20s</p>", 
-            unsafe_allow_html=True)
+# === HEADER ===
+st.markdown("<h1 style='text-align: center; color: #2c3e50;'>Anki Pro Generator</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: #6c757d;'>Grok IA via OpenRouter – Decks intelligents gratuits</p>", unsafe_allow_html=True)
 
-# === LAYOUT PRINCIPAL ===
+# === LAYOUT ===
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.markdown("### Configuration du Deck")
+    st.markdown("### Configuration")
     
-    sujet = st.text_input(
-        "Sujet",
-        placeholder="ex: équations second degré, vocabulaire anglais B1, histoire de France...",
-        value="équations second degré"
-    )
+    sujet = st.text_input("Sujet", placeholder="ex: équations second degré", value="équations second degré")
+    niveau = st.selectbox("Niveau", ["Débutant", "Intermédiaire", "Avancé", "Expert"])
     
-    niveau = st.selectbox(
-        "Niveau",
-        ["Débutant", "Intermédiaire", "Avancé", "Expert"]
-    )
+    nb = st.slider("Cartes", 10, 300, 100, step=10)
     
-    st.markdown("#### Nombre de cartes")
-    nb = st.slider(
-        "Cartes à générer",
-        min_value=10,
-        max_value=300,
-        value=100,
-        step=10,
-        help="Gratuit jusqu'à 300 cartes"
-    )
-    
-    st.markdown("#### Options avancées")
-    formules = st.checkbox("Formules en LaTeX (pour les maths)", value=True)
+    formules = st.checkbox("Formules LaTeX", value=True)
     qcm = st.checkbox("QCM / Vrai-Faux", value=True)
     
-    if st.button("Auto : Choisir le nombre optimal", key="auto"):
-        nb = random.choice([80, 100, 120, 150, 200])
-        st.success(f"Nombre optimal sélectionné : **{nb} cartes**")
+    if st.button("Auto Optimal"):
+        nb = random.choice([80, 100, 150, 200])
+        st.success(f"Optimal : {nb} cartes")
 
 with col2:
-    st.markdown("### Aperçu & Génération")
+    st.markdown("### Génération")
     
     if st.button("Générer Deck IA", type="primary", use_container_width=True):
         if nb > 300:
-            st.error("Limite gratuite : 300 cartes maximum")
+            st.error("Limite gratuite : 300 cartes max")
             st.stop()
             
-        with st.spinner("Grok IA génère vos cartes... (10-30s)"):
-            # === PROMPT INTELLIGENT ===
-            prompt = f"Crée exactement {nb} cartes Anki sur le sujet '{sujet}'. "
-            prompt += f"Niveau : {niveau}. "
-            if formules:
-                prompt += "Utilise LaTeX pour les formules mathématiques (ex: \\Delta = b^2 - 4ac). "
-            if qcm:
-                prompt += "Inclue des questions QCM ou Vrai/Faux. "
-            prompt += ("Format strict : une carte par ligne, séparée par | → "
-                      "Question|Réponse. Exemple : Quel est Δ ?|\\Delta = b^2 - 4ac")
+        with st.spinner("Grok IA génère... (10-30s)"):
+            # === PROMPT ===
+            prompt = f"Crée {nb} cartes Anki sur '{sujet}'. Niveau {niveau}. "
+            if formules: prompt += "LaTeX pour formules. "
+            if qcm: prompt += "QCM/Vrai-Faux. "
+            prompt += "Format : Question|Réponse par ligne. Ex: Δ ?|b²-4ac"
 
-            # === APPEL OPENROUTER ===
+            # === HEADERS FIXÉS POUR 401 ===
             headers = {
                 "Authorization": f"Bearer {OPENROUTER_KEY}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://anki-deck-generator-morgan-dbs.streamlit.app",
-                "X-Title": "Anki Pro Generator"
+                "HTTP-Referer": "https://anki-deck-generator-morgan-dbs.streamlit.app",  # Ton URL exacte
+                "X-Title": "Anki Pro Generator"  # Titre app
             }
             payload = {
                 "model": "xai/grok-beta",
@@ -148,87 +85,62 @@ with col2:
                     timeout=60
                 )
 
-                # === DEBUG AFFICHÉ (en cas d'erreur) ===
+                # === DEBUG COMPLET ===
                 st.markdown("**Réponse API (debug) :**")
-                try:
-                    json_resp = response.json()
-                    st.json(json_resp, expanded=False)
-                except:
-                    st.code(response.text, language="text")
+                st.json(response.json() if response.status_code == 200 else {"error": response.text}, expanded=False)
 
-                # === VÉRIFICATION ERREUR ===
                 if response.status_code != 200:
-                    st.error(f"Erreur API {response.status_code} : {response.text}")
+                    st.error(f"Erreur {response.status_code}: {response.text}")
                     st.stop()
 
                 result = response.json()
                 if "choices" not in result or not result["choices"]:
-                    st.error("Aucune carte générée. Vérifiez votre clé OpenRouter.")
+                    st.error("Pas de cartes. Vérifie compte OpenRouter (crédits ?)")
                     st.stop()
 
                 content = result["choices"][0]["message"]["content"]
 
             except Exception as e:
-                st.error(f"Erreur réseau ou timeout : {e}")
+                st.error(f"Erreur : {e}")
                 st.stop()
 
-            # === PARSE DES CARTES ===
+            # === PARSE CARTES ===
             cartes = []
             for line in content.split("\n"):
                 line = line.strip()
-                if "|" in line and not line.startswith("#"):
+                if "|" in line:
                     parts = line.split("|", 1)
                     if len(parts) == 2:
                         q, r = parts[0].strip(), parts[1].strip()
                         if q and r:
                             cartes.append((q, r))
             
-            cartes = cartes[:nb]  # Limite au nombre demandé
-            if len(cartes) == 0:
-                st.error("Aucune carte valide générée. Essayez un autre sujet.")
+            if not cartes:
+                st.error("Aucune carte valide. Réessaie avec un sujet simple.")
                 st.stop()
 
-            # === CRÉATION DU DECK ANKI ===
+            # === DECK ANKI ===
             model = genanki.Model(
                 1607392319,
-                'Anki Pro Model',
+                'Pro',
                 fields=[{'name': 'Front'}, {'name': 'Back'}],
-                templates=[{
-                    'name': 'Card 1',
-                    'qfmt': '<div style="font-size: 26px; text-align: center; padding: 20px;">{{Front}}</div>',
-                    'afmt': '<div style="font-size: 34px; color: #e74c3c; text-align: center; padding: 20px;">{{Back}}</div><hr><small>{{Front}}</small>'
-                }]
+                templates=[{'name': 'Card', 'qfmt': '{{Front}}', 'afmt': '{{Back}}'}]
             )
 
-            deck_id = random.randrange(1 << 30, 1 << 31)
-            deck = genanki.Deck(deck_id, f"{sujet} - {len(cartes)} cartes (IA)")
+            deck = genanki.Deck(random.randrange(1 << 30, 1 << 31), f"{sujet} - {len(cartes)} cartes")
+            for q, r in cartes[:nb]:
+                deck.add_note(genanki.Note(model=model, fields=[q, r]))
 
-            for q, r in cartes:
-                note = genanki.Note(model=model, fields=[q, r])
-                deck.add_note(note)
-
-            file_path = Path("deck_anki_pro.apkg")
+            file_path = Path("deck.apkg")
             genanki.Package(deck).write_to_file(str(file_path))
 
-        # === TÉLÉCHARGEMENT ===
+        # === DOWNLOAD ===
         with open(file_path, "rb") as f:
-            st.download_button(
-                label="Télécharge ton deck .apkg",
-                data=f,
-                file_name=f"{sujet.replace(' ', '_')[:25]}_{len(cartes)}cartes.apkg",
-                mime="application/octet-stream",
-                use_container_width=True
-            )
+            st.download_button("Télécharge .apkg", f, f"{sujet.replace(' ', '_')}.apkg")
         
-        st.success(f"Deck généré avec **{len(cartes)} cartes IA** ! Importe dans Anki.")
+        st.success(f"✅ {len(cartes)} cartes IA ! Importe dans Anki.")
         st.balloons()
 
 # === FOOTER ===
 st.markdown("---")
-st.markdown(
-    "<p style='text-align: center; color: #6c757d; font-size: 0.9rem;'>"
-    "Anki Pro 2025 – IA <b>Grok</b> via <a href='https://openrouter.ai' target='_blank'>OpenRouter</a> | "
-    "Gratuit pour test | Prochainement : <b>Premium 4,99€/mois</b>"
-    "</p>",
-    unsafe_allow_html=True
-)
+st.markdown("<p style='text-align: center; color: #6c757d;'>Anki Pro 2025 – Powered by Grok xAI via OpenRouter | Gratuit pour test</p>", unsafe_allow_html=True)
