@@ -1,16 +1,16 @@
-# app.py - ANKI PRO ULTIME : VRAIES CARTES COURS + EXOS (0 FALLBACK)
+# app.py - ANKI PRO ULTIME : VRAIES CARTES COURS + EXOS (0 ERREUR)
 import streamlit as st
 import genanki
 import requests
 import random
 from pathlib import Path
 
-# === OPENROUTER (ta clé qui marche en VS Code) ===
+# === OPENROUTER (ta clé qui marche) ===
 OPENROUTER_KEY = "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"
 
 st.set_page_config(page_title="Anki Pro", page_icon="rocket", layout="wide", initial_sidebar_state="expanded")
 
-# === DESIGN LISIBILE (comme tu aimes) ===
+# === DESIGN LISIBILE ===
 st.markdown("""
 <style>
     .main {background: #f8f9fa; color: #212529; font-family: 'Segoe UI', sans-serif;}
@@ -59,17 +59,17 @@ with col2:
             nb_cours = int(nb * pourcent_cours / 100)
             nb_exos = nb - nb_cours
 
-            # === PROMPT ULTRA PRÉCIS (FORCE VRAIES RÉPONSES) ===
+            # === PROMPT ULTRA PRÉCIS ===
             prompt = f"""
 Tu es un professeur expert. Crée EXACTEMENT {nb} cartes Anki sur '{sujet}' (niveau {niveau}).
 
 RÈGLES STRICTES :
-1. {nb_cours} cartes de COURS : définitions, formules, étapes, règles (ex: "Qu'est-ce que la méiose ?")
-2. {nb_exos} exercices ALÉATOIRES : calculs, QCM, Vrai/Faux, applications (ex: "Vrai ou Faux : La fécondation...")
+1. {nb_cours} cartes de COURS : définitions, formules, étapes, règles
+2. {nb_exos} exercices ALÉATOIRES : QCM, Vrai/Faux, applications
 3. Format : Question|Réponse
 4. Une carte par ligne
 5. Pas de numéros, pas de "Q1", pas de "Réponse détaillée"
-6. Si biologie : LaTeX pour formules (ex: \\text{{ADN}})
+6. Si biologie : LaTeX (ex: \\text{{ADN}})
 7. Mélange QCM, Vrai/Faux, questions ouvertes
 8. EXACTEMENT {nb} cartes
 
@@ -105,7 +105,7 @@ QCM : Combien d'ovules produit une femme par cycle ? A) 1 B) 100 C) 1000|Répons
                 st.error(f"Erreur API : {e}")
                 content = ""
 
-            # === PARSE STRICTE (100% VRAIES CARTES) ===
+            # === PARSE STRICTE ===
             cartes = []
             for line in content.split("\n"):
                 line = line.strip()
@@ -117,10 +117,10 @@ QCM : Combien d'ovules produit une femme par cycle ? A) 1 B) 100 C) 1000|Répons
                 if len(cartes) >= nb:
                     break
 
-            # === SI PAS ASSEZ → ON FORCE AVEC PROMPT PLUS DUR (NO FALLBACK) ===
+            # === SI PAS ASSEZ → ON RÉESSAIE AUTOMATIQUEMENT (SANS ERREUR) ===
             if len(cartes) < nb:
-                st.warning("Réessaie – Grok IA en cours...")
-                st.experimental_rerun()
+                st.warning("Grok n'a pas donné assez de cartes – Réessaie...")
+                st.rerun()  # CORRIGÉ : st.rerun() au lieu de st.experimental_rerun()
 
             cartes = cartes[:nb]
 
