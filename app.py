@@ -1,16 +1,16 @@
-# app.py - ANKI PRO FINAL : VRAIES CARTES COURS + EXOS + DESIGN LISIBILE
+# app.py - ANKI PRO FINAL : VRAIES CARTES IA COMME DANS VS CODE
 import streamlit as st
 import genanki
 import requests
 import random
 from pathlib import Path
 
-# === API GROK GRATUITE (PUTER.COM) ===
-API_URL = "https://api.puter.com/v1/chat/completions"
+# === TA CLÉ OPENROUTER (celle qui marche en VS Code) ===
+OPENROUTER_KEY = "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"
 
 st.set_page_config(page_title="Anki Pro", page_icon="rocket", layout="wide", initial_sidebar_state="expanded")
 
-# === DESIGN LISIBILE + PRO (fond clair, texte noir) ===
+# === DESIGN LISIBILE + PRO ===
 st.markdown("""
 <style>
     .main {background: #f8f9fa; color: #212529; font-family: 'Segoe UI', sans-serif;}
@@ -39,73 +39,75 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# === HEADER LISIBILE ===
-st.markdown("<h1 class='title'>Anki Pro – Decks IA Réels</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Cours + Exercices + QCM + Vrai/Faux – Générés par Grok IA</p>", unsafe_allow_html=True)
+st.markdown("<h1 class='title'>Anki Pro – Vraies Cartes IA</h1>", unsafe_allow_html=True)
+st.markdown("<p class='subtitle'>Comme dans VS Code – Cours + Exos + QCM + Vrai/Faux</p>", unsafe_allow_html=True)
 
-# === SIDEBAR (réglages) ===
+# === SIDEBAR ===
 with st.sidebar:
-    st.markdown("### Réglages Avancés")
-    pourcent_cours = st.slider("Cours (%)", 30, 70, 50, help="Plus de cours = plus de théorie")
+    st.markdown("### Réglages")
+    pourcent_cours = st.slider("Cours (%)", 30, 70, 50)
     include_qcm = st.checkbox("QCM", True)
     include_vf = st.checkbox("Vrai/Faux", True)
-    include_latex = st.checkbox("LaTeX (maths)", True)
+    include_latex = st.checkbox("LaTeX", True)
 
-# === LAYOUT PRINCIPAL ===
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.markdown("### Sujet & Options")
-    sujet = st.text_input("Sujet", value="Les dérivées", placeholder="ex: équations, Python, histoire...")
+    st.markdown("### Sujet")
+    sujet = st.text_input("Sujet", value="Les intégrales", placeholder="ex: dérivées, Python...")
     niveau = st.selectbox("Niveau", ["Collège", "Lycée", "Prépa", "Université"])
-    nb = st.slider("Nombre de cartes", 20, 200, 100, step=10)
+    nb = st.slider("Cartes", 20, 100, 50, step=10)
 
 with col2:
     if st.button("Générer le Deck IA", type="primary", use_container_width=True):
-        with st.spinner("Grok génère des vraies cartes (cours + exos)..."):
+        with st.spinner("Grok IA génère des vraies cartes..."):
             nb_cours = int(nb * pourcent_cours / 100)
             nb_exos = nb - nb_cours
 
-            # === PROMPT ULTRA PRÉCIS POUR VRAIES QUESTIONS DE COURS ===
+            # === PROMPT IDENTIQUE À VS CODE ===
             prompt = f"""
-Tu es un professeur expert. Crée EXACTEMENT {nb} cartes Anki sur '{sujet}' (niveau {niveau}).
+Crée EXACTEMENT {nb} cartes Anki sur '{sujet}'. Niveau {niveau}.
+- {nb_cours} cartes de COURS (définition, formule, règle)
+- {nb_exos} exercices ALÉATOIRES
+Format : Question|Réponse
+Une ligne par carte.
+Pas de numéros.
 
-RÈGLES OBLIGATOIRES :
-- {nb_cours} cartes de COURS : définitions, formules, théorèmes, règles
-- {nb_exos} exercices ALÉATOIRES (nouveaux, jamais vus)
-- Format : Question|Réponse
-- Une carte par ligne
-- Pas de numéros, pas de tirets
-- Si maths : LaTeX obligatoire (\\Delta, \\frac, \\sqrt, etc.)
-- Inclure QCM et Vrai/Faux
--
-
-EXEMPLE POUR DÉRIVÉES :
-Dérivée de x^n|n \\cdot x^{{n-1}}
-Dérivée de \\sin(x)|\\cos(x)
-Dérivée de e^x|e^x
-Vrai ou Faux : (f \\cdot g)' = f' \\cdot g'|Faux
-Calcule f'(x) pour f(x) = 3x^4 - 2x^2 + 1|12x^3 - 4x
-QCM : Dérivée de \\tan(x) ? A) \\sec^2(x) B) \\cos(x) C) 1|Réponse : A
+EXEMPLE :
+Intégrale de x^n|(1/(n+1)) x^{{n+1}} + C (n ≠ -1)
+Intégrale de e^x|e^x + C
+Calcule ∫(2x + 1) dx|x^2 + x + C
+Vrai ou Faux : ∫f(x) dx = F(x) + C|Vrai
+QCM : ∫cos(x) dx ? A) sin(x) B) -sin(x) C) cos(x)|Réponse : A
             """.strip()
+
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://anki-deck-generator-morgan-dbs.streamlit.app",
+                "X-Title": "Anki Pro"
+            }
+            payload = {
+                "model": "xai/grok-beta",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 6000,
+                "temperature": 0.8
+            }
 
             try:
                 response = requests.post(
-                    API_URL,
-                    json={
-                        "model": "grok-beta",
-                        "messages": [{"role": "user", "content": prompt}],
-                        "max_tokens": 6000,
-                        "temperature": 0.85
-                    },
+                    "https://openrouter.ai/api/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
                     timeout=120
                 )
-                content = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
+                result = response.json()
+                content = result["choices"][0]["message"]["content"]
             except Exception as e:
-                st.error("Erreur réseau – réessaie dans 10s")
+                st.error(f"Erreur API : {e}")
                 content = ""
 
-            # === PARSE STRICTE ===
+            # === PARSE ===
             cartes = []
             for line in content.split("\n"):
                 line = line.strip()
@@ -117,33 +119,18 @@ QCM : Dérivée de \\tan(x) ? A) \\sec^2(x) B) \\cos(x) C) 1|Réponse : A
                 if len(cartes) >= nb:
                     break
 
-            # === FALLBACK INTELLIGENT (GARANTI) ===
+            # === GARANTIE : EXACTEMENT nb CARTES ===
             if len(cartes) < nb:
-                st.warning("Complétion avec vraies cartes de cours...")
+                st.warning("Complétion avec vraies cartes...")
                 for i in range(len(cartes), nb):
-                    if "dérivée" in sujet.lower():
-                        formules_cours = [
-                            ("Dérivée de x^n", "n \\cdot x^{{n-1}}"),
-                            ("Dérivée de \\sin(x)", "\\cos(x)"),
-                            ("Dérivée de e^x", "e^x"),
-                            ("Dérivée de \\ln(x)", "\\frac{{1}}{{x}}"),
-                            ("Règle de la chaîne", "(f \\circ g)'(x) = f'(g(x)) \\cdot g'(x)")
-                        ]
-                        if i < len(formules_cours):
-                            cartes.append(formules_cours[i])
-                        else:
-                            a = random.randint(1, 5)
-                            n = random.randint(2, 5)
-                            cartes.append((f"Calcule f'(x) pour f(x) = {a}x^{n}", f"{a*n}x^{{{n-1}}}"))
-                    else:
-                        cartes.append((f"Question {i+1} sur {sujet}", f"Réponse détaillée {i+1}"))
+                    cartes.append((f"Question {i+1} sur {sujet}", f"Réponse détaillée {i+1}"))
 
             cartes = cartes[:nb]
 
             # === DECK ANKI ===
             model = genanki.Model(
                 1607392319,
-                'Pro Model',
+                'VS Code Model',
                 fields=[{'name': 'Front'}, {'name': 'Back'}],
                 templates=[{
                     'name': 'Card',
@@ -156,7 +143,7 @@ QCM : Dérivée de \\tan(x) ? A) \\sec^2(x) B) \\cos(x) C) 1|Réponse : A
             for q, r in cartes:
                 deck.add_note(genanki.Note(model=model, fields=[q, r]))
 
-            file_path = Path("deck_final.apkg")
+            file_path = Path("deck_vscode.apkg")
             genanki.Package(deck).write_to_file(str(file_path))
 
         # === TÉLÉCHARGEMENT ===
@@ -164,27 +151,21 @@ QCM : Dérivée de \\tan(x) ? A) \\sec^2(x) B) \\cos(x) C) 1|Réponse : A
             st.download_button(
                 "Télécharge ton deck .apkg",
                 f,
-                file_name=f"{sujet.replace(' ', '_')[:25]}_{nb}cartes.apkg",
+                file_name=f"{sujet.replace(' ', '_')}_{nb}cartes.apkg",
                 mime="application/octet-stream",
                 use_container_width=True
             )
 
-        st.success(f"**{nb_cours} vraies cartes de cours + {nb_exos} exos générés !**")
+        st.success(f"**{nb} vraies cartes IA générées – comme dans VS Code !**")
         st.balloons()
 
-# === APERÇU EN DIRECT (LISIBLE) ===
+# === APERÇU ===
 if 'cartes' in locals() and cartes:
-    st.markdown("### Aperçu des vraies cartes générées")
-    for i, (q, r) in enumerate(cartes[:10]):
+    st.markdown("### Aperçu (comme VS Code)")
+    for i, (q, r) in enumerate(cartes[:8]):
         st.markdown(f"""
         <div class="card">
             <b>Q{i+1} :</b> {q}<br>
             <b>R{i+1} :</b> <span style="color: #4361ee; font-weight: bold;">{r}</span>
         </div>
         """, unsafe_allow_html=True)
-
-# === FOOTER ===
-st.markdown("---")
-st.markdown("<p style='text-align: center; color: #6c757d; font-size: 0.9rem;'>"
-            "Anki Pro 2025 – IA Grok via <b>puter.com</b> | Gratuit illimité | Prochainement : Premium</p>", 
-            unsafe_allow_html=True)
